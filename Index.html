@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🪔 Desi Diwali Bingo - Host Caller App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Rozha+One&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: radial-gradient(circle at top, #4a0404 0%, #1a0000 70%, #0d0000 100%);
+      color: #fff;
+      min-height: 100vh;
+    }
+    .font-heading {
+      font-family: 'Rozha One', serif;
+    }
+    .gold-gradient-text {
+      background: linear-gradient(135deg, #FFE259 0%, #FFA751 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .gold-box {
+      background: linear-gradient(135deg, #78350f 0%, #b45309 50%, #78350f 100%);
+      border: 2px solid #fbbf24;
+      box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.4);
+    }
+    .diya-glow {
+      filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.8));
+    }
+    .pulse-btn {
+      animation: pulseGlow 2s infinite;
+    }
+    @keyframes pulseGlow {
+      0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+      70% { box-shadow: 0 0 0 18px rgba(245, 158, 11, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+    }
+    .bg-rangoli {
+      background-image: radial-gradient(rgba(245, 158, 11, 0.15) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1a0000;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #b45309;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="bg-rangoli pb-16 flex flex-col items-center">
+
+  <!-- Header Banner -->
+  <header class="w-full bg-black/60 backdrop-blur-md border-b border-amber-500/30 sticky top-0 z-40 px-4 py-3 shadow-lg">
+    <div class="max-w-5xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-3">
+      <div class="flex items-center space-x-3">
+        <span class="text-3xl diya-glow">🪔</span>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold font-heading gold-gradient-text tracking-wide">Desi Diwali Bingo</h1>
+          <p class="text-xs text-amber-200/80">30 Player Edition • Host Interactive Caller</p>
+        </div>
+      </div>
+      
+      <!-- Top Action Bar / Settings -->
+      <div class="flex items-center space-x-3">
+        <!-- Manual Confetti Button -->
+        <button onclick="triggerFireworks()" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-amber-500 to-yellow-500 text-amber-950 hover:brightness-110 active:scale-95 transition flex items-center gap-1.5 shadow-md">
+          <span>🎉</span>
+          <span>Confetti</span>
+        </button>
+
+        <!-- Audio Speech Toggle -->
+        <button id="ttsToggle" onclick="toggleTTS()" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 hover:bg-amber-900 transition flex items-center gap-1.5">
+          <span id="ttsIcon">🔊</span>
+          <span id="ttsStatus">Voice: ON</span>
+        </button>
+
+        <!-- Category View Switcher -->
+        <button onclick="toggleGridFilter()" id="filterBtn" class="px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-950/80 border border-amber-500/50 text-amber-200 hover:bg-amber-900 transition">
+          Filter: All Categories
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-4xl w-full px-4 pt-6 space-y-6">
+
+    <!-- Counter & Progress Bar -->
+    <div class="bg-amber-950/40 border border-amber-500/30 rounded-2xl p-4 backdrop-blur-sm">
+      <div class="flex justify-between items-center text-xs sm:text-sm font-semibold mb-2">
+        <span class="text-amber-300">Called: <span id="calledCount" class="text-white text-base font-bold">0</span> / 75</span>
+        <span class="text-amber-400/80" id="progressPercent">0% Completed</span>
+        <span class="text-amber-300">Remaining: <span id="remainingCount" class="text-white text-base font-bold">75</span></span>
+      </div>
+      <div class="w-full bg-black/60 rounded-full h-3 overflow-hidden border border-amber-500/30">
+        <div id="progressBar" class="bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-500 h-full w-0 transition-all duration-300"></div>
+      </div>
+    </div>
+
+    <!-- Spotlight / Currently Called Display -->
+    <div id="spotlightCard" class="gold-box rounded-3xl p-6 sm:p-8 text-center relative overflow-hidden transition-all duration-300 transform scale-100">
+      <div class="absolute -top-12 -left-12 w-32 h-32 bg-amber-400/10 rounded-full blur-2xl"></div>
+      <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-red-600/20 rounded-full blur-2xl"></div>
+
+      <div id="categoryBadge" class="inline-block px-3 py-1 rounded-full text-xs font-bold bg-black/40 text-amber-300 border border-amber-400/40 uppercase tracking-wider mb-3">
+        Ready to start!
+      </div>
+
+      <div class="min-h-[120px] flex flex-col justify-center items-center my-2">
+        <h2 id="currentWord" class="text-3xl sm:text-5xl font-extrabold font-heading text-white tracking-wide leading-tight drop-shadow-md">
+          Press "Draw Next Word" 🪔
+        </h2>
+        
+        <!-- Host Drama Commentary Prompt Box -->
+        <div id="dramaPrompt" class="hidden mt-4 bg-red-950/80 border border-red-500/50 rounded-xl px-4 py-2 max-w-md text-amber-200 text-xs sm:text-sm font-medium shadow-inner animate-bounce">
+          <!-- Text inserted via JS -->
+        </div>
+      </div>
+
+      <div class="text-xs text-amber-200/60 italic mt-2" id="lastDrawnTime">
+        Click below to call the first bingo item.
+      </div>
+    </div>
+
+    <!-- Main Control Buttons -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <!-- BUTTON 1: DRAW NEXT -->
+      <button id="drawBtn" onclick="drawNextWord()" class="sm:col-span-2 pulse-btn bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 text-amber-950 hover:brightness-110 active:scale-95 font-extrabold text-lg sm:text-xl py-4 px-6 rounded-2xl shadow-xl border-2 border-amber-200 flex items-center justify-center space-x-3 transition">
+        <span class="text-2xl">🎲</span>
+        <span id="drawBtnText">DRAW NEXT WORD</span>
+      </button>
+
+      <!-- BUTTON 2: RESET GAME -->
+      <button onclick="confirmReset()" class="bg-red-950/80 hover:bg-red-900 border border-red-500/50 text-red-200 active:scale-95 font-bold text-base py-4 px-6 rounded-2xl shadow-md flex items-center justify-center space-x-2 transition">
+        <span class="text-lg">🔄</span>
+        <span>RESET GAME</span>
+      </button>
+    </div>
+
+    <!-- Recent History Strip -->
+    <div class="bg-black/50 border border-amber-500/20 rounded-2xl p-4">
+      <h3 class="text-xs font-bold text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+        <span>⏱️</span> Recent Calls (Reverse Chronological)
+      </h3>
+      <div id="recentHistory" class="flex gap-2 overflow-x-auto pb-1 text-xs text-amber-200">
+        <span class="text-gray-500 italic py-1">No words called yet.</span>
+      </div>
+    </div>
+
+    <!-- Master 75-Word Tracking Grid -->
+    <div class="bg-black/40 border border-amber-500/30 rounded-2xl p-4 sm:p-6 backdrop-blur-sm">
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4 pb-3 border-b border-amber-500/20">
+        <div>
+          <h3 class="text-lg font-bold text-amber-300 font-heading">Master Caller Tracking Sheet</h3>
+          <p class="text-xs text-amber-200/70">Check called items. Green/Gold = Called | Dark = Uncalled</p>
+        </div>
+      </div>
+      <div id="masterGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+        <!-- Rendered dynamically via JS -->
+      </div>
+    </div>
+
+    <!-- Reset Modal Confirmation -->
+    <div id="resetModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-amber-950 border-2 border-amber-500 rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl">
+        <div class="text-4xl">⚠️</div>
+        <h3 class="text-xl font-bold font-heading text-white">Reset Diwali Bingo?</h3>
+        <p class="text-xs text-amber-200/80">This will clear all drawn words and start a fresh round. Are you sure?</p>
+        <div class="flex gap-3 pt-2">
+          <button onclick="closeResetModal()" class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-200 py-2.5 rounded-xl text-sm font-semibold transition">Cancel</button>
+          <button onclick="executeReset()" class="flex-1 bg-red-600 hover:bg-red-500 text-white py-2.5 rounded-xl text-sm font-bold shadow-lg transition">Yes, Reset</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer with Signature -->
+  <footer class="w-full max-w-4xl px-4 mt-8 pt-4 border-t border-amber-500/20 flex flex-col sm:flex-row justify-between items-center text-xs text-amber-200/60 gap-2">
+    <div>🪔 Desi Diwali Bingo — 30 Player Edition</div>
+    <div class="flex items-center space-x-1.5 font-medium bg-amber-950/60 border border-amber-500/30 px-3 py-1 rounded-full shadow-sm text-amber-300">
+      <span>✨ Visualization by <strong class="text-amber-200 font-bold">Darpan</strong></span>
+      <span class="text-amber-500">|</span>
+      <span>Developed by <strong class="text-amber-200 font-bold">AI</strong></span>
+    </div>
+  </footer>
+
+  <script>
+    // Master Pool of 75 Words across 5 Desi Categories
+    const masterPool = [
+      // Vegetarian Food (20)
+      { id: 1, word: "Samosa", category: "Vegetarian Food", emoji: "🥟" },
+      { id: 2, word: "Pani Puri", category: "Vegetarian Food", emoji: "🥣" },
+      { id: 3, word: "Jalebi", category: "Vegetarian Food", emoji: "🥨" },
+      { id: 4, word: "Gulab Jamun", category: "Vegetarian Food", emoji: "🍯" },
+      { id: 5, word: "Chai", category: "Vegetarian Food", emoji: "☕" },
+      { id: 6, word: "Vegetarian Biryani", category: "Vegetarian Food", emoji: "🍚" },
+      { id: 7, word: "Paneer Tikka", category: "Vegetarian Food", emoji: "🍢" },
+      { id: 8, word: "Dhokla", category: "Vegetarian Food", emoji: "🟡" },
+      { id: 9, word: "Pav Bhaji", category: "Vegetarian Food", emoji: "🍞" },
+      { id: 10, word: "Chole Bhature", category: "Vegetarian Food", emoji: "🫓" },
+      { id: 11, word: "Dosa", category: "Vegetarian Food", emoji: "🫓" },
+      { id: 12, word: "Idli", category: "Vegetarian Food", emoji: "⚪" },
+      { id: 13, word: "Vada Pav", category: "Vegetarian Food", emoji: "🍔" },
+      { id: 14, word: "Kachori", category: "Vegetarian Food", emoji: "🥟" },
+      { id: 15, word: "Rasgulla", category: "Vegetarian Food", emoji: "🍨" },
+      { id: 16, word: "Barfi", category: "Vegetarian Food", emoji: "🍬" },
+      { id: 17, word: "Ladoo", category: "Vegetarian Food", emoji: "🧆" },
+      { id: 18, word: "Pakora", category: "Vegetarian Food", emoji: "🧆" },
+      { id: 19, word: "Aloo Tikki", category: "Vegetarian Food", emoji: "🥔" },
+      { id: 20, word: "Masala Dosa", category: "Vegetarian Food", emoji: "🌯" },
+
+      // Bollywood & Dance (15)
+      { id: 21, word: "DDLJ", category: "Bollywood & Dance", emoji: "🎬" },
+      { id: 22, word: "3 Idiots", category: "Bollywood & Dance", emoji: "🎒" },
+      { id: 23, word: "Kuch Kuch Hota Hai", category: "Bollywood & Dance", emoji: "🎸" },
+      { id: 24, word: "Kabhi Khushi Kabhie Gham", category: "Bollywood & Dance", emoji: "🛕" },
+      { id: 25, word: "Lagaan", category: "Bollywood & Dance", emoji: "🏏" },
+      { id: 26, word: "Dil To Pagal Hai", category: "Bollywood & Dance", emoji: "💃" },
+      { id: 27, word: "Queen", category: "Bollywood & Dance", emoji: "👑" },
+      { id: 28, word: "Dangal", category: "Bollywood & Dance", emoji: "🤼" },
+      { id: 29, word: "Jab We Met", category: "Bollywood & Dance", emoji: "🚆" },
+      { id: 30, word: "Om Shanti Om", category: "Bollywood & Dance", emoji: "✨" },
+      { id: 31, word: "Bhangra", category: "Bollywood & Dance", emoji: "🕺" },
+      { id: 32, word: "Garba", category: "Bollywood & Dance", emoji: "🥢" },
+      { id: 33, word: "Dhol", category: "Bollywood & Dance", emoji: "🥁" },
+      { id: 34, word: "Kala Chashma", category: "Bollywood & Dance", emoji: "🕶️" },
+      { id: 35, word: "London Thumakda", category: "Bollywood & Dance", emoji: "🎶" },
+
+      // Diwali Traditions (10)
+      { id: 36, word: "Diya", category: "Diwali Traditions", emoji: "🪔" },
+      { id: 37, word: "Rangoli", category: "Diwali Traditions", emoji: "🎨" },
+      { id: 38, word: "Lakshmi Puja", category: "Diwali Traditions", emoji: "🙏" },
+      { id: 39, word: "Firecrackers", category: "Diwali Traditions", emoji: "🎆" },
+      { id: 40, word: "Mithai Box", category: "Diwali Traditions", emoji: "🎁" },
+      { id: 41, word: "New Clothes", category: "Diwali Traditions", emoji: "👔" },
+      { id: 42, word: "Gold Shopping", category: "Diwali Traditions", emoji: "🪙" },
+      { id: 43, word: "Festive Lights", category: "Diwali Traditions", emoji: "💡" },
+      { id: 44, word: "Gift Exchange", category: "Diwali Traditions", emoji: "📦" },
+      { id: 45, word: "Family Photos", category: "Diwali Traditions", emoji: "📸" },
+
+      // Desi Family Humour (15)
+      { id: 46, word: "Mummy ne bulaya!", category: "Family Humour", emoji: "📢", mandatory: true, drama: "🗣️ Host Drama: Say it loud! 'Stop eating samosas, Mummy is calling!'" },
+      { id: 47, word: "Paisa vasool!", category: "Family Humour", emoji: "💰", mandatory: true, drama: "🗣️ Host Drama: Announce: 'Full value for money tonight! Total Paisa Vasool!'" },
+      { id: 48, word: "Khana kab khulega?", category: "Family Humour", emoji: "🍽️", mandatory: true, drama: "🗣️ Host Drama: Shout out: 'The national desi question since 1947!'" },
+      { id: 49, word: "Shaadi season!", category: "Family Humour", emoji: "💒", mandatory: true, drama: "🗣️ Host Drama: Get your outfits ready, wedding season is here!" },
+      { id: 50, word: "Bas five minutes!", category: "Family Humour", emoji: "⏳", mandatory: true, drama: "🗣️ Host Drama: Remember: Desi 5 minutes actually means 45 minutes!" },
+      { id: 51, word: "NRI lifestyle!", category: "Family Humour", emoji: "✈️", mandatory: true, drama: "🗣️ Host Drama: Shovelling snow in Canada, dreaming of mangoes in India!" },
+      { id: 52, word: "Aunty Gossip", category: "Family Humour", emoji: "🤫" },
+      { id: 53, word: "Rishta", category: "Family Humour", emoji: "💍" },
+      { id: 54, word: "Touch Your Feet", category: "Family Humour", emoji: "🦶" },
+      { id: 55, word: "Free Food!", category: "Family Humour", emoji: "🍱" },
+      { id: 56, word: "One More Roti", category: "Family Humour", emoji: "🫓" },
+      { id: 57, word: "Chappal Hunt", category: "Family Humour", emoji: "🩴" },
+      { id: 58, word: "Group Photo", category: "Family Humour", emoji: "📷" },
+      { id: 59, word: "Takeaway Box", category: "Family Humour", emoji: "🥡" },
+      { id: 60, word: "Sweets Box", category: "Family Humour", emoji: "🍬" },
+
+      // Indo-Canadian Lifestyle (15)
+      { id: 61, word: "Ontario", category: "Indo-Canadian Life", emoji: "🇨🇦" },
+      { id: 62, word: "Tim Hortons", category: "Indo-Canadian Life", emoji: "☕" },
+      { id: 63, word: "Costco", category: "Indo-Canadian Life", emoji: "🛒" },
+      { id: 64, word: "Snow Shovelling", category: "Indo-Canadian Life", emoji: "❄️" },
+      { id: 65, word: "Long Weekend", category: "Indo-Canadian Life", emoji: "🗓️" },
+      { id: 66, word: "Flight to India", category: "Indo-Canadian Life", emoji: "✈️" },
+      { id: 67, word: "Desi Playlist", category: "Indo-Canadian Life", emoji: "🎧" },
+      { id: 68, word: "Dance Floor", category: "Indo-Canadian Life", emoji: "💃" },
+      { id: 69, word: "Who’s Driving?", category: "Indo-Canadian Life", emoji: "🚗" },
+      { id: 70, word: "Photo First", category: "Indo-Canadian Life", emoji: "🤳" },
+      { id: 71, word: "Gift Envelope", category: "Indo-Canadian Life", emoji: "✉️" },
+      { id: 72, word: "Winter Coat", category: "Indo-Canadian Life", emoji: "🧥" },
+      { id: 73, word: "Chai Break", category: "Indo-Canadian Life", emoji: "🫖" },
+      { id: 74, word: "Maple Syrup", category: "Indo-Canadian Life", emoji: "🍁" },
+      { id: 75, word: "Airport Pickup", category: "Indo-Canadian Life", emoji: "🚘" }
+    ];
+
+    // State Variables (stored in localStorage for persistence)
+    let calledIds = [];
+    let uncalledPool = [];
+    let ttsEnabled = true;
+    let currentFilter = "ALL";
+
+    // Initialize Game State
+    function initGame() {
+      const saved = localStorage.getItem("desi_diwali_bingo_called");
+      if (saved) {
+        try {
+          calledIds = JSON.parse(saved);
+        } catch(e) {
+          calledIds = [];
+        }
+      } else {
+        calledIds = [];
+      }
+
+      updatePools();
+      renderMasterGrid();
+      updateUI();
+    }
+
+    function updatePools() {
+      uncalledPool = masterPool.filter(item => !calledIds.includes(item.id));
+    }
+
+    // Draw Next Word Core Logic
+    function drawNextWord() {
+      if (uncalledPool.length === 0) {
+        alert("🎉 ALL 75 WORDS HAVE BEEN CALLED! Game finished!");
+        triggerFireworks();
+        return;
+      }
+
+      // Random pick
+      const randomIndex = Math.floor(Math.random() * uncalledPool.length);
+      const drawnItem = uncalledPool[randomIndex];
+
+      // Update lists
+      calledIds.push(drawnItem.id);
+      localStorage.setItem("desi_diwali_bingo_called", JSON.stringify(calledIds));
+      updatePools();
+
+      // UI Animations & Display Update
+      animateSpotlight(drawnItem);
+      renderMasterGrid();
+      updateUI();
+
+      // Audio Speech Output
+      if (ttsEnabled) {
+        speakWord(drawnItem.word);
+      }
+
+      // Celebratory Triggers
+      if (drawnItem.mandatory || calledIds.length === 25 || calledIds.length === 50 || calledIds.length === 75) {
+        triggerFireworks();
+      }
+    }
+
+    // Animate the Spotlight Card
+    function animateSpotlight(item) {
+      const card = document.getElementById("spotlightCard");
+      const wordEl = document.getElementById("currentWord");
+      const categoryBadge = document.getElementById("categoryBadge");
+      const dramaPrompt = document.getElementById("dramaPrompt");
+      const lastDrawnTime = document.getElementById("lastDrawnTime");
+
+      // Flash Effect
+      card.classList.add("scale-95", "opacity-80");
+      setTimeout(() => {
+        card.classList.remove("scale-95", "opacity-80");
+      }, 150);
+
+      // Set Text Content
+      wordEl.innerHTML = `${item.emoji} ${item.word}`;
+      categoryBadge.innerText = item.category;
+      lastDrawnTime.innerText = `Call #${calledIds.length} • Just Called`;
+
+      // Mandatory / Drama Prompt
+      if (item.drama) {
+        dramaPrompt.innerText = item.drama;
+        dramaPrompt.classList.remove("hidden");
+      } else {
+        dramaPrompt.classList.add("hidden");
+      }
+    }
+
+    // Text To Speech
+    function speakWord(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); // Stop current speech
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.9;
+        utterance.pitch = 1.0;
+        window.speechSynthesis.speak(utterance);
+      }
+    }
+
+    function toggleTTS() {
+      ttsEnabled = !ttsEnabled;
+      document.getElementById("ttsStatus").innerText = `Voice: ${ttsEnabled ? 'ON' : 'OFF'}`;
+      document.getElementById("ttsIcon").innerText = ttsEnabled ? '🔊' : '🔇';
+    }
+
+    // Render 75-Word Master Grid
+    function renderMasterGrid() {
+      const gridContainer = document.getElementById("masterGrid");
+      gridContainer.innerHTML = "";
+
+      let itemsToDisplay = masterPool;
+      if (currentFilter !== "ALL") {
+        itemsToDisplay = masterPool.filter(i => i.category === currentFilter);
+      }
+
+      itemsToDisplay.forEach(item => {
+        const isCalled = calledIds.includes(item.id);
+        const card = document.createElement("div");
+        
+        card.className = `p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between transition cursor-pointer border ${
+          isCalled 
+            ? "bg-emerald-950/80 border-emerald-500/60 text-emerald-200 shadow-sm" 
+            : "bg-amber-950/40 border-amber-500/20 text-amber-100 hover:border-amber-400/50"
+        }`;
+
+        card.innerHTML = `
+          <div class="flex items-center space-x-1.5 truncate">
+            <span>${item.emoji}</span>
+            <span class="${isCalled ? 'line-through opacity-90 font-bold' : ''}">${item.word}</span>
+          </div>
+          <span class="text-[10px] ml-1 px-1.5 py-0.5 rounded ${isCalled ? 'bg-emerald-600 text-white font-bold' : 'bg-black/30 text-amber-400/60'}">
+            ${isCalled ? '✓' : '#' + item.id}
+          </span>
+        `;
+
+        // Optional manual toggle on click
+        card.onclick = () => toggleItemManual(item.id);
+        gridContainer.appendChild(card);
+      });
+    }
+
+    function toggleItemManual(id) {
+      const index = calledIds.indexOf(id);
+      if (index > -1) {
+        calledIds.splice(index, 1);
+      } else {
+        calledIds.push(id);
+      }
+      localStorage.setItem("desi_diwali_bingo_called", JSON.stringify(calledIds));
+      updatePools();
+      renderMasterGrid();
+      updateUI();
+    }
+
+    // Category Grid Filter Toggle
+    function toggleGridFilter() {
+      const categories = ["ALL", "Vegetarian Food", "Bollywood & Dance", "Diwali Traditions", "Family Humour", "Indo-Canadian Life"];
+      const currentIndex = categories.indexOf(currentFilter);
+      currentFilter = categories[(currentIndex + 1) % categories.length];
+      document.getElementById("filterBtn").innerText = `Filter: ${currentFilter}`;
+      renderMasterGrid();
+    }
+
+    // Update Counts & Recent History Strip
+    function updateUI() {
+      const count = calledIds.length;
+      const remaining = 75 - count;
+      const percent = Math.round((count / 75) * 100);
+
+      document.getElementById("calledCount").innerText = count;
+      document.getElementById("remainingCount").innerText = remaining;
+      document.getElementById("progressPercent").innerText = `${percent}% Completed`;
+      document.getElementById("progressBar").style.width = `${percent}%`;
+
+      // Update Recent History (Last 10 called)
+      const recentContainer = document.getElementById("recentHistory");
+      if (calledIds.length === 0) {
+        recentContainer.innerHTML = `<span class="text-gray-500 italic py-1">No words called yet.</span>`;
+        document.getElementById("drawBtnText").innerText = "DRAW NEXT WORD";
+      } else {
+        document.getElementById("drawBtnText").innerText = remaining === 0 ? "GAME COMPLETE!" : "DRAW NEXT WORD";
+        
+        const recentItems = [...calledIds].reverse().slice(0, 10).map(id => masterPool.find(m => m.id === id));
+        recentContainer.innerHTML = recentItems.map((item, idx) => `
+          <div class="flex-shrink-0 px-2.5 py-1 rounded-lg border text-xs font-semibold flex items-center gap-1 ${
+            idx === 0 
+              ? 'bg-amber-500 text-amber-950 border-amber-300 font-bold scale-105 shadow-md' 
+              : 'bg-amber-950/70 border-amber-500/30 text-amber-200'
+          }">
+            <span>${item.emoji}</span>
+            <span>${item.word}</span>
+          </div>
+        `).join("");
+      }
+    }
+
+    // Reset Controls
+    function confirmReset() {
+      document.getElementById("resetModal").classList.remove("hidden");
+    }
+
+    function closeResetModal() {
+      document.getElementById("resetModal").classList.add("hidden");
+    }
+
+    function executeReset() {
+      calledIds = [];
+      localStorage.removeItem("desi_diwali_bingo_called");
+      updatePools();
+      renderMasterGrid();
+      updateUI();
+      
+      // Reset Spotlight
+      document.getElementById("currentWord").innerHTML = `Press "Draw Next Word" 🪔`;
+      document.getElementById("categoryBadge").innerText = `Ready to start!`;
+      document.getElementById("dramaPrompt").classList.add("hidden");
+      document.getElementById("lastDrawnTime").innerText = `Game reset successfully.`;
+
+      closeResetModal();
+    }
+
+    // Fireworks / Confetti Effect
+    function triggerFireworks() {
+      if (typeof confetti === 'function') {
+        confetti({
+          particleCount: 70,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#fbbf24', '#f59e0b', '#ef4444', '#10b981']
+        });
+      }
+    }
+
+    // Start App on Load
+    window.onload = initGame;
+  </script>
+</body>
+</html>
